@@ -1,28 +1,27 @@
 import itertools
 from typing import Any, Dict, List
 
+import torch
 from sentence_transformers import CrossEncoder
 
 PASSAGE_RANKER = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512, device=7
+    "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    max_length=512,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 )
-
-
-def get_unique_questions(example) -> List[str]:
-    """Returns a list of unique question strings."""
-    return sorted(set(example["questions"]))
-
-
-def get_unique_evidences(example) -> List[str]:
-    """Returns a list of unique evidence strings."""
-    evidences = example["revisions"][0]["evidences"]
-    return sorted(set(evidence["text"] for evidence in evidences))
 
 
 def compute_score_matrix(
     questions: List[str], evidences: List[str]
 ) -> List[List[float]]:
-    """Scores the questions against the evidences."""
+    """Scores the relevance of all evidence against all questions using a CrossEncoder.
+
+    Args:
+        questions: A list of unique questions.
+        evidences: A list of unique evidences.
+    Returns:
+        score_matrix: A 2D list list of question X evidence relevance scores.
+    """
     score_matrix = []
     for q in questions:
         evidence_scores = PASSAGE_RANKER.predict([(q, e) for e in evidences]).tolist()
@@ -33,7 +32,19 @@ def compute_score_matrix(
 def question_coverage_objective_fn(
     score_matrix: List[List[float]], evidence_indices: List[int]
 ) -> float:
-    """Returns the question coverage score."""
+    """Given (query, evidence) scores and a subset of evidence, return the coverage.
+
+    Given all pairwise query and evidence scores, and a subset of the evidence
+    specified by indices, return a value indicating how well this subset of evidence
+    covers (i.e., helps answer) all questions.
+
+    Args:
+        score_matrix: A 2D list list of question X evidence relevance scores.
+        evidence_indicies: A subset of the evidence to to get the coverage score of.
+    Returns:
+        total: The coverage we would get by using the subset of evidence in
+            `evidence_indices` over all questions.
+    """
     # Compute sum_{question q} max_{selected evidence e} score(q, e).
     # This encourages all questions to be explained by at least one evidence.
     total = 0.0
@@ -43,25 +54,25 @@ def question_coverage_objective_fn(
 
 
 def select_evidences(
-    example, prefer_fewer: bool = False, max_selected: int = 5
+    example: Dict[str, Any], max_selected: int = 5, prefer_fewer: bool = False
 ) -> List[Dict[str, Any]]:
-    """Selects the set of evidences that maximizes the objective function.
+    """Selects the set of evidence that maximizes information converage over the claim.
 
     Args:
-    score_matrix: A 2D list of size num_questions x num_evidences.
-    max_selected: Maximum number of evidences to select.
-    prefer_fewer: If True and the maximum objective value can be achieved by
-      fewer evidences than max_selected, prefer selecting fewer evidences.
-
+        example: The result of running the editing pipeline on one claim.
+        max_selected: Maximum number of evidences to select.
+        prefer_fewer: If True and the maximum objective value can be achieved by
+            fewer evidences than `max_selected`, prefer selecting fewer evidences.
     Returns:
-        selected_evidences: Selected evidences.
+        selected_evidences: Selected evidences that serve as the attribution report.
     """
-    questions = get_unique_questions(example)
-    evidences = get_unique_evidences(example)
-    score_matrix = compute_score_matrix(questions, evidences)
+    questions = sorted(set(example["questions"]))
+    evidences = sorted(set(e["text"] for e in example["revisions"][0]["evidences"]))
     num_evidences = len(evidences)
-    if num_evidences == 0:
-        return {}
+    if not num_evidences:
+        return []
+
+    score_matrix = compute_score_matrix(questions, evidences)
 
     best_combo = tuple()
     best_objective_value = float("-inf")

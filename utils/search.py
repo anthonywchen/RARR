@@ -14,7 +14,9 @@ from sentence_transformers import CrossEncoder
 
 LANG_DETECTOR = fasttext.load_model(os.getenv("FASTTEXT_PATH"))
 PASSAGE_RANKER = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512, device=7
+    "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    max_length=512,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 )
 SEARCH_URL = "https://api.bing.microsoft.com/v7.0/search/"
 SUBSCRIPTION_KEY = os.getenv("AZURE_SEARCH_KEY")

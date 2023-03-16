@@ -1,12 +1,7 @@
 """Runs the RARR editor on a JSONL file of claims.
 
-Runs the agreement gate and editor on a file with claims using GPT-3 and Bing.
-
-Example usage:
-python run_editor_sequential.py \
-    --input_file data/palm/nq.jsonl \
-    --output_file output/nq_davinci.jsonl \
-    --model text-davinci-002 \
+Runs question generation, retrieval, agreement gate, and editing on a file with claims
+using GPT-3 and Bing.
 """
 import argparse
 import json
@@ -27,29 +22,15 @@ from utils import (
 )
 
 
-def gate_cache_key(claim: str, query: str, evidence: str) -> str:
-    """Defines how the key of the agreement gate is defined.
-
-    Args:
-        claim: Claim.
-        query: Query.
-        evidence: Evidence.
-    Returns:
-        Key to the agreement gate cache
-    """
-    return claim + query + evidence
-
-
 def run_editor_one_instance(
     claim: str,
-    context: str = None,
     model: str = "text-davinci-003",
     temperature_qgen: float = 0.7,
     num_rounds_qgen: int = 3,
     max_search_results_per_query: int = 3,
-    max_passages_per_search_result: int = 1,
     max_sentences_per_passage: int = 5,
     sliding_distance: int = 1,
+    max_passages_per_search_result: int = 1,
     max_evidences_per_question: int = 1,
     max_edit_ratio: float = 100,
 ) -> Dict[str, Any]:
@@ -58,6 +39,7 @@ def run_editor_one_instance(
     Args:
         claim: Text to check the validity of.
         model: Name of the OpenAI GPT-3 model to use.
+        temperature_qgen: Sampling temperature to use for query generation.
         num_rounds_qgen: Number of times to sample questions.
         max_search_results_per_query: Maximum number of search results per query.
         max_sentences_per_passage: Maximum number of sentences for each passage.
@@ -66,13 +48,10 @@ def run_editor_one_instance(
         max_passages_per_search_result:  Maximum number of passages to return for
             each search result. A passage ranker is applied first.
         max_evidences_per_question: Maximum number of evidences to return per question.
-        cached_questions: Cached results of question generation.
-        cached_evidences_for_questions: Cached results of evidence retrieval.
-        cached_agreement_gates: Maps from a concatenation of the claim, query, and
-            evidence to the agreement gate result.
+        max_edit_ratio: Maximum edit ratio between claim and edit for each round.
     Returns:
         result: All revision information, including the queries generated, search
-            results, agreement gate information and each revision step done on the
+            results, agreement gate information, and each revision step done on the
             claim.
     """
     original_claim = claim
@@ -80,7 +59,6 @@ def run_editor_one_instance(
 
     # Generate questions for the claim
     questions = question_generation.run_rarr_question_generation(
-        context=context,
         claim=claim,
         model=model,
         prompt=rarr_prompts.QGEN_PROMPT,
@@ -100,7 +78,7 @@ def run_editor_one_instance(
         for query in questions
     ]
 
-    # Iterate through all questions generated for the claim
+    # Flatten the evidences per question into a single list.
     used_evidences = [
         e
         for cur_evids in evidences_for_questions
@@ -112,7 +90,6 @@ def run_editor_one_instance(
     for evid in used_evidences:
         # Run the agreement gate on the current (claim, query, evidence) tuple
         gate = agreement_gate.run_agreement_gate(
-            context=context,
             claim=claim,
             query=evid["query"],
             evidence=evid["text"],
@@ -124,7 +101,6 @@ def run_editor_one_instance(
         # Run the editor gate if the agreement gate is open
         if gate["is_open"]:
             edited_claim = editor.run_rarr_editor(
-                context=context,
                 claim=claim,
                 query=evid["query"],
                 evidence=evid["text"],
@@ -200,13 +176,6 @@ def get_args() -> argparse.Namespace:
         help="Maximum number of search results we get per query.",
     )
     parser.add_argument(
-        "--max_passages_per_search_result",
-        default=1,
-        type=int,
-        help="Maximum number of passages to return for each search result. A passage"
-        " ranker is applied to get the top passages per query.",
-    )
-    parser.add_argument(
         "--max_sentences_per_passage",
         default=5,
         type=int,
@@ -217,6 +186,13 @@ def get_args() -> argparse.Namespace:
         default=1,
         type=int,
         help="Sliding window distance for extracting passages from a search result.",
+    )
+    parser.add_argument(
+        "--max_passages_per_search_result",
+        default=1,
+        type=int,
+        help="Maximum number of passages to return for each search result. A passage"
+        " ranker is applied to get the top passages per query.",
     )
     parser.add_argument(
         "--max_evidences_per_question",
@@ -273,9 +249,9 @@ def main() -> None:
                     temperature_qgen=args.temperature_qgen,
                     num_rounds_qgen=args.num_rounds_qgen,
                     max_search_results_per_query=args.max_search_results_per_query,
-                    max_passages_per_search_result=args.max_passages_per_search_result,
                     max_sentences_per_passage=args.max_sentences_per_passage,
                     sliding_distance=args.sliding_distance,
+                    max_passages_per_search_result=args.max_passages_per_search_result,
                     max_evidences_per_question=args.max_evidences_per_question,
                     max_edit_ratio=args.max_edit_ratio,
                 )
