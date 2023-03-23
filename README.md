@@ -81,7 +81,7 @@ result = run_editor_one_instance(claim=claim, model="text-davinci-003")
 print(json.dumps(result, indent=4))
 ```
 
-## Launcing an Interactive Demo of RARR
+### Launcing an Interactive Demo of RARR
 ```bash
 streamlit run launch_editor_demo.py --server.baseUrlPath rarr --server.fileWatcherType none
 ```
