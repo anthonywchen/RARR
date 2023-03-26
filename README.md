@@ -1,6 +1,6 @@
 # RARR: Researching and Revising What Language Models Say, Using Language Models
 
-Welcome! This repository contains a public implementation for [RARR: Researching and Revising What Language Models Say, Using Language Models](https://arxiv.org/abs/2210.08726) from CMU, Google Research, and UC Irvine. RARR addresses the attribution and factuality problems in large language models (LLMs) in a post-hoc manner by retriving evidence to attribute the LLM's output and editing the output to be facutally consistent with the evidence.
+Welcome! This repository contains a public implementation for [RARR: Researching and Revising What Language Models Say, Using Language Models](https://arxiv.org/abs/2210.08726) from CMU, Google Research, and UC Irvine. RARR addresses the attribution and factuality problems in large language models (LLMs) in a post-hoc manner by retrieving evidence to attribute the LLM's output and editing the output to be facutally consistent with the evidence.
 RARR uses large language models themselves to do the editing.
 
 The techniques in RARR are quite general so if you are working on ***any*** task using LLMs to edit the output of LLMs (*e.g.*, removing bias, fixing toxing outputs, etc.), you may find this repository a good starting point.
@@ -8,26 +8,20 @@ The techniques in RARR are quite general so if you are working on ***any*** task
 ## Getting Started
 
 ### Environment Setup
-We recommend using [Poetry](https://python-poetry.org/docs/) to install dependencies. 
-After installing Poetry, run `poetry install` in the repository root to install dependencies and `poetry shell` to launch the environment.
-Alternatively, you can use `requirements.txt` which is derived from the `poetry.lock` file.
+The repository was tested on Ubuntu 20.04.2 LTS with CUDA 11.1.
 
-Download the following:
-```bash
-python -m spacy download en_core_web_sm
-# FastText model for language identification
-wget https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
-```
+We recommend using [Poetry](https://python-poetry.org/docs/) to install dependencies.
+After installing Poetry, if you also have CUDA 11.1, simply run `poetry install` to install dependencies.
+If you do not have CUDA 11.1, delete the `poetry.lock` file, then run `poetry install`.
+Run `poetry shell` to launch the environment.
 
-Add the following to your `~/.bash_profile`:
-```bash
-export FASTTEXT_PATH="/absolute/path/to/lid.176.bin"
-```
-We use [black](https://github.com/psf/black) to automatically format code.
+Alternatively, you can use `requirements.txt` which is derived from the `poetry.lock` file however you may have to change the `nvidia-*` versions in the file if you are not using CUDA 11.1.
+
+Finally run `python -m spacy download en_core_web_sm`.
 
 ### Setting up APIs
 #### **Bing API**
-We use the Bing to search for relevant evidence.
+We use Bing to search for relevant evidence.
 To setup a Bing API, create an [Azure account](https://portal.azure.com/#home), then [create a subscription](https://portal.azure.com/#view/Microsoft_Azure_Billing/SubscriptionsBlade), then [create a Bing Search API](https://portal.azure.com/#create/microsoft.bingsearch) using the subscription you created.
 We recommend the [S2 pricing plan](https://www.microsoft.com/en-us/bing/apis/pricing) which costs $3 every 1000 calls.
 You will be given two API keys.

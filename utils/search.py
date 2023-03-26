@@ -6,13 +6,11 @@ import random
 from typing import Any, Dict, List, Tuple
 
 import bs4
-import fasttext
 import requests
 import spacy
 import torch
 from sentence_transformers import CrossEncoder
 
-LANG_DETECTOR = fasttext.load_model(os.getenv("FASTTEXT_PATH"))
 PASSAGE_RANKER = CrossEncoder(
     "cross-encoder/ms-marco-MiniLM-L-6-v2",
     max_length=512,
@@ -169,12 +167,8 @@ def run_search(
     # Scrape search results in parallel
     with concurrent.futures.ThreadPoolExecutor() as e:
         scraped_results = e.map(scrape_url, search_results, itertools.repeat(timeout))
-    # Remove URLs if we weren't able to scrape anything or if they aren't in English.
-    scraped_results = [
-        r
-        for r in scraped_results
-        if r[0] and LANG_DETECTOR.predict(r[0][:5000], k=1)[0][0] == "__label__en"
-    ]
+    # Remove URLs if we weren't able to scrape anything or if they are a PDF.
+    scraped_results = [r for r in scraped_results if r[0] and ".pdf" not in r[1]]
 
     # Iterate through the scraped results and extract out the most useful passages.
     retrieved_passages = []
