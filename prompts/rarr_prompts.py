@@ -35,7 +35,6 @@ To verify it,
 
 You said: {claim}
 To verify it,
-1. I googled:
 """.strip()
 
 AGREEMENT_GATE_PROMPT = """I will check some things you said.

@@ -18,9 +18,7 @@ PASSAGE_RANKER = CrossEncoder(
 )
 SEARCH_URL = "https://api.bing.microsoft.com/v7.0/search/"
 SUBSCRIPTION_KEY = os.getenv("AZURE_SEARCH_KEY")
-TOKENIZER = spacy.load(
-    "en_core_web_sm", disable=["ner", "tagger", "lemmatizer", "parser"]
-)
+TOKENIZER = spacy.load("en_core_web_sm", disable=["ner", "tagger", "lemmatizer"])
 
 
 def chunk_text(

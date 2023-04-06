@@ -27,8 +27,8 @@ def run_editor_one_instance(
     model: str = "text-davinci-003",
     temperature_qgen: float = 0.7,
     num_rounds_qgen: int = 3,
-    max_search_results_per_query: int = 3,
-    max_sentences_per_passage: int = 5,
+    max_search_results_per_query: int = 5,
+    max_sentences_per_passage: int = 4,
     sliding_distance: int = 1,
     max_passages_per_search_result: int = 1,
     max_evidences_per_question: int = 1,
@@ -171,13 +171,13 @@ def get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--max_search_results_per_query",
-        default=3,
+        default=5,
         type=int,
         help="Maximum number of search results we get per query.",
     )
     parser.add_argument(
         "--max_sentences_per_passage",
-        default=5,
+        default=4,
         type=int,
         help="Maximum number of sentences per evidence passage.",
     )

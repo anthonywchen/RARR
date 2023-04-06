@@ -4,7 +4,6 @@ import time
 from typing import Dict, Union
 
 import openai
-from openai import error
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -65,7 +64,7 @@ def run_rarr_editor(
                 stop=["\n\n"],
             )
             break
-        except error.ServiceUnavailableError as exception:
+        except openai.error.OpenAIError as exception:
             print(f"{exception}. Retrying...")
             time.sleep(2)
 
