@@ -6,18 +6,8 @@ RARR uses large language models themselves to do the editing.
 The techniques in RARR are quite general so if you are working on ***any*** task using LLMs to edit the output of LLMs (*e.g.*, removing bias, fixing toxing outputs, etc.), you may find this repository a good starting point.
 
 ## Getting Started
-
-### Environment Setup
-The repository was tested on Ubuntu 20.04.2 LTS with CUDA 11.1.
-
-We recommend using [Poetry](https://python-poetry.org/docs/) to install dependencies.
-After installing Poetry, if you also have CUDA 11.1, simply run `poetry install` to install dependencies.
-If you do not have CUDA 11.1, delete the `poetry.lock` file, then run `poetry install`.
-Run `poetry shell` to launch the environment.
-
-Alternatively, you can use `requirements.txt` which is derived from the `poetry.lock` file however you may have to change the `nvidia-*` versions in the file if you are not using CUDA 11.1.
-
-Finally run `python -m spacy download en_core_web_sm`.
+The repository was tested on Ubuntu 20.04.2 LTS using Python 3.8.
+First install dependencies in `requirements.txt`, then run `python -m spacy download en_core_web_sm`.
 
 ### Setting up APIs
 #### **Bing API**
