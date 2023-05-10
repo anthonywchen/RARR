@@ -12,14 +12,30 @@ import jsonlines
 import Levenshtein
 import tqdm
 
-from prompts import rarr_prompts
+from prompts import hallucination_prompts, rarr_prompts
 from utils import (
     agreement_gate,
     editor,
     evidence_selection,
+    hallucination,
     search,
     question_generation,
 )
+
+
+def raise_hallucinate_evidence_warning():
+    if not raise_hallucinate_evidence_warning.called:
+        print(
+            "WARNING!! YOU ARE USING A LLM TO GENERATE EVIDENCE POTENTIALLY WITH "
+            "HALLUCINATIONS INSTEAD OF RETRIEVING EVIDENCE. \n\nThis should NEVER be "
+            "done when trying to improve attribution as evidence may be inaccurate "
+            "and is only provided to quickly experiment with repository setting up "
+            "the search API first.\n"
+        )
+    raise_hallucinate_evidence_warning.called = True
+
+
+raise_hallucinate_evidence_warning.called = False
 
 
 def run_editor_one_instance(
@@ -33,6 +49,7 @@ def run_editor_one_instance(
     max_passages_per_search_result: int = 1,
     max_evidences_per_question: int = 1,
     max_edit_ratio: float = 100,
+    hallucinate_evidence: bool = False,
 ) -> Dict[str, Any]:
     """Runs query generation, search, agreement gating, and editing on a claim.
 
@@ -67,16 +84,29 @@ def run_editor_one_instance(
     )
 
     # Run search on generated question for the claim
-    evidences_for_questions = [
-        search.run_search(
-            query=query,
-            max_search_results_per_query=max_search_results_per_query,
-            max_sentences_per_passage=max_sentences_per_passage,
-            sliding_distance=sliding_distance,
-            max_passages_per_search_result_to_return=max_passages_per_search_result,
-        )
-        for query in questions
-    ]
+    if hallucinate_evidence:
+        raise_hallucinate_evidence_warning()
+        evidences_for_questions = [
+            [
+                hallucination.run_evidence_hallucination(
+                    query=query,
+                    model=model,
+                    prompt=hallucination_prompts.EVIDENCE_HALLUCINATION,
+                )
+            ]
+            for query in questions
+        ]
+    else:
+        evidences_for_questions = [
+            search.run_search(
+                query=query,
+                max_search_results_per_query=max_search_results_per_query,
+                max_sentences_per_passage=max_sentences_per_passage,
+                sliding_distance=sliding_distance,
+                max_passages_per_search_result_to_return=max_passages_per_search_result,
+            )
+            for query in questions
+        ]
 
     # Flatten the evidences per question into a single list.
     used_evidences = [
@@ -170,6 +200,14 @@ def get_args() -> argparse.Namespace:
         help="Number of times to re-sample queries for a claim.",
     )
     parser.add_argument(
+        "--hallucinate_evidence",
+        action="store_true",
+        help="If this flag is set, we hallucinate evidence instead of retrieving it. "
+        "This flag should NEVER be set when trying to improve attribution as evidence  "
+        "may be inaccurate and is only provided to quickly experiment with repository "
+        "setting up the search API first.",
+    )
+    parser.add_argument(
         "--max_search_results_per_query",
         default=5,
         type=int,
@@ -254,6 +292,7 @@ def main() -> None:
                     max_passages_per_search_result=args.max_passages_per_search_result,
                     max_evidences_per_question=args.max_evidences_per_question,
                     max_edit_ratio=args.max_edit_ratio,
+                    hallucinate_evidence=args.hallucinate_evidence,
                 )
             writer.write(json.dumps(line, ensure_ascii=False) + "\n")
 

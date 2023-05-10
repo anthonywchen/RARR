@@ -20,6 +20,8 @@ Copy one of the keys and add the following to your `~/.bash_profile`:
 export AZURE_SEARCH_KEY="<BING_API_KEY>"
 ```
 
+If you would like to quickly test the RARR pipeline without having access to a search API key, see [Editing a Single Claim](### Editing a Single Claim).
+
 #### **OpenAI API**
 We use LLMs from OpenAI to verify and edit the claims.
 Add the following to your `~/.bash_profile`:
@@ -55,6 +57,10 @@ python run_editor_sequential.py \
   --claim_field "claim"
 ```
 
+**WARNING!!** We also provide the ability to provide a `--hallucinate-evidence` flag which uses a LLM to generate evidence instead of retrieving it.
+We provide this flag to quickly test the repository quickly in the event a search API cannot be obtained.
+This flag should NEVER be set when using RARR to improve attribution as the evidence generated may contain hallucinations themselves.
+
 ### Editing a Single Claim
 ```python
 import json
@@ -63,7 +69,13 @@ from run_editor_sequential import run_editor_one_instance
 claim = "Michael Jordan played for the LA Lakers."
 result = run_editor_one_instance(claim=claim, model="text-davinci-003")
 print(json.dumps(result, indent=4))
+
+# To hallucinate evidence using a LLM. Do NOT trust attribution results in this mode.
+claim = "Michael Jordan played for the LA Lakers."
+do_not_trust_result = run_editor_one_instance(claim=claim, model="text-davinci-003", halllucinate_evidence=True)
+print(json.dumps(do_not_trust_result, indent=4))
 ```
+
 
 ## Citation
 If you find this repository useful, please cite the RARR paper.
