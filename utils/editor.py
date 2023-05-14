@@ -23,7 +23,7 @@ def parse_api_response(api_response: str) -> str:
     if len(api_response) < 2:
         print("Editor error.")
         return None
-    edited_claim = api_response[1].replace("5. My fix: ", "").strip()
+    edited_claim = api_response[1].split("My fix:")[-1].strip()
     return edited_claim
 
 
@@ -54,6 +54,7 @@ def run_rarr_editor(
         ).strip()
     else:
         gpt3_input = prompt.format(claim=claim, query=query, evidence=evidence).strip()
+
     for _ in range(num_retries):
         try:
             response = openai.Completion.create(

@@ -40,6 +40,7 @@ raise_hallucinate_evidence_warning.called = False
 
 def run_editor_one_instance(
     claim: str,
+    context: str = None,
     model: str = "text-davinci-003",
     temperature_qgen: float = 0.7,
     num_rounds_qgen: int = 3,
@@ -77,8 +78,11 @@ def run_editor_one_instance(
     # Generate questions for the claim
     questions = question_generation.run_rarr_question_generation(
         claim=claim,
+        context=context,
         model=model,
-        prompt=rarr_prompts.QGEN_PROMPT,
+        prompt=rarr_prompts.CONTEXTUAL_QGEN_PROMPT
+        if context
+        else rarr_prompts.QGEN_PROMPT,
         temperature=temperature_qgen,
         num_rounds=num_rounds_qgen,
     )
@@ -118,13 +122,16 @@ def run_editor_one_instance(
     # Iterative editing over each evidence
     revision_steps = []
     for evid in used_evidences:
-        # Run the agreement gate on the current (claim, query, evidence) tuple
+        # Run the agreement gate on the current (claim, context, query, evidence) tuple
         gate = agreement_gate.run_agreement_gate(
             claim=claim,
+            context=context,
             query=evid["query"],
             evidence=evid["text"],
             model=model,
-            prompt=rarr_prompts.AGREEMENT_GATE_PROMPT,
+            prompt=rarr_prompts.CONTEXTUAL_AGREEMENT_GATE_PROMPT
+            if context
+            else rarr_prompts.AGREEMENT_GATE_PROMPT,
         )
         agreement_gates.append(gate)
 
@@ -132,16 +139,23 @@ def run_editor_one_instance(
         if gate["is_open"]:
             edited_claim = editor.run_rarr_editor(
                 claim=claim,
+                context=context,
                 query=evid["query"],
                 evidence=evid["text"],
                 model=model,
-                prompt=rarr_prompts.EDITOR_PROMPT,
+                prompt=rarr_prompts.CONTEXTUAL_EDITOR_PROMPT
+                if context
+                else rarr_prompts.EDITOR_PROMPT,
             )["text"]
+
+            # Don't keep the edit if the editor makes a huge change
             if Levenshtein.distance(claim, edited_claim) / len(claim) <= max_edit_ratio:
                 claim = edited_claim
+
         revision_steps.append({"text": claim})
 
     result = {
+        "context": context,
         "text": original_claim,
         "questions": questions,
         "evidences_for_questions": evidences_for_questions,
@@ -180,6 +194,12 @@ def get_args() -> argparse.Namespace:
         default="model_outputs_explanation",
         type=str,
         help="Field of the JSONL file to run the claim editing on.",
+    )
+    parser.add_argument(
+        "--context_field",
+        default=None,
+        type=str,
+        help="Field of the JSONL file to grab the context.",
     )
     parser.add_argument(
         "--model",
@@ -276,6 +296,11 @@ def main() -> None:
         lines = list(jsonlines.open(args.input_file))
         for line in tqdm.tqdm(lines):
             claim = line["input_info"][args.claim_field]
+            if args.context_field:
+                context = line["input_info"][args.context_field]
+                context = " ".join(context.split("\n"))
+            else:
+                context = None
 
             # Search for finished result
             if finished_results and claim in finished_results:
@@ -284,6 +309,7 @@ def main() -> None:
                 line["result"] = run_editor_one_instance(
                     model=args.model,
                     claim=claim,
+                    context=context,
                     temperature_qgen=args.temperature_qgen,
                     num_rounds_qgen=args.num_rounds_qgen,
                     max_search_results_per_query=args.max_search_results_per_query,

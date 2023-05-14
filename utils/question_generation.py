@@ -58,6 +58,7 @@ def run_rarr_question_generation(
         gpt3_input = prompt.format(context=context, claim=claim).strip()
     else:
         gpt3_input = prompt.format(claim=claim).strip()
+
     questions = set()
     for _ in range(num_rounds):
         for _ in range(num_retries):

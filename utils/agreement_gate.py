@@ -64,6 +64,7 @@ def run_agreement_gate(
         ).strip()
     else:
         gpt3_input = prompt.format(claim=claim, query=query, evidence=evidence).strip()
+
     for _ in range(num_retries):
         try:
             response = openai.Completion.create(
