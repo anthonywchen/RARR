@@ -5,6 +5,9 @@ RARR uses large language models themselves to do the editing.
 
 The techniques in RARR are quite general so if you are working on ***any*** task using LLMs to edit the output of LLMs (*e.g.*, removing bias, fixing toxing outputs, etc.), you may find this repository a good starting point.
 
+The easiest way to start using RARR is to NOT pull this repository, and instead copy this [Colab notebook](https://colab.research.google.com/drive/15zU1AC4XoIKqGRtzgUPo192CpNyZSdQO?usp=sharing) into your Google Drive and run the cells to get started!
+Alternatively, you can pull this repository and follow the following steps to get started.
+
 ## Getting Started
 The repository was tested on Ubuntu 20.04.2 LTS using Python 3.8.
 First install dependencies in `requirements.txt`, then run `python -m spacy download en_core_web_sm`.

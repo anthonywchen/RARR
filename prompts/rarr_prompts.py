@@ -61,6 +61,7 @@ Context: "Time of My Life" is a song by American singer-songwriter Bill Medley f
 You said: The song was produced by Michael Lloyd in the same year.
 To verify what you just said,
 1. I googled: Who produced the song "Time of My Life"?
+2. I googled: When was the song "Time of My Life" by Bill Medley produced?
 
 Context: The Late Show with Stephen Colbert is an American late-night talk show hosted by Stephen Colbert, which premiered on September 8, 2015.
 You said: Produced by Spartina Productions and CBS Television Studios, it is the second iteration of CBS' Late Show franchise.
