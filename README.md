@@ -75,7 +75,7 @@ print(json.dumps(result, indent=4))
 
 # To hallucinate evidence using a LLM. Do NOT trust attribution results in this mode.
 claim = "Michael Jordan played for the LA Lakers."
-do_not_trust_result = run_editor_one_instance(claim=claim, model="text-davinci-003", halllucinate_evidence=True)
+do_not_trust_result = run_editor_one_instance(claim=claim, model="text-davinci-003", hallucinate_evidence=True)
 print(json.dumps(do_not_trust_result, indent=4))
 ```
 
